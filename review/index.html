@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Review suggestions - Wolof Wordle</title>
+  <meta name="theme-color" content="#d9c7a3">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <script src="../assets/theme.js"></script>
+  <link rel="stylesheet" href="../assets/site.css?v=1">
+  <style>
+    .list { display: grid; gap: 12px; margin-top: 16px; }
+    .s .hw { font: 800 1.3rem var(--display); }
+    .s pre { white-space: pre-wrap; margin: 8px 0; font: 0.95rem var(--body); }
+    .s .meta { font-size: .85rem; }
+    code { background: var(--plaque); border: 1px solid var(--line); padding: 1px 5px; font-size: .85rem; }
+  </style>
+</head>
+<body data-page="review">
+  <main>
+    <div class="wrap-shadow"><section class="card">
+      <h1>Suggestions</h1>
+      <p class="muted">For PK only. Enter the ADMIN_KEY you set in Cloudflare. Add the good ones to <code>data/dict.js</code>, then press Done.</p>
+      <form class="row" id="f"><input class="field" id="key" type="password" placeholder="Admin key" style="flex:1;min-width:180px"><button class="btn primary">Load</button></form>
+      <p id="status" class="muted"></p>
+    </section></div>
+    <div class="list" id="list"></div>
+  </main>
+  <script src="../assets/site.js?v=1"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    $("key").value = store.get("admin-key", "");
+    async function load() {
+      const key = $("key").value.trim(); store.set("admin-key", key);
+      $("status").textContent = "Loading...";
+      try {
+        const r = await fetch(`../api/suggest?key=${encodeURIComponent(key)}`);
+        if (!r.ok) throw new Error(r.status === 404 ? "Wrong key" : "Error " + r.status);
+        const { count, suggestions } = await r.json();
+        $("status").textContent = `${count} waiting`;
+        $("list").innerHTML = suggestions.map(s => `<div class="wrap-shadow"><div class="card s">
+          <span class="tag">${s.kind === "fix" ? "Correction" : "New word"}</span>
+          <div class="hw">${escapeHtml(s.wolof)}</div><div>${escapeHtml(s.english)}</div>
+          ${s.note ? `<pre>${escapeHtml(s.note)}</pre>` : ""}
+          <div class="meta muted">${escapeHtml(s.who || "anonymous")} · ${escapeHtml(s.country || "")} · ${new Date(s.at).toLocaleString()}</div>
+          <p><code>["${escapeHtml(s.wolof)}", "n", "${escapeHtml(s.english)}", "more"],</code></p>
+          <button class="btn" data-id="${escapeHtml(s.id)}">Done</button></div></div>`).join("");
+      } catch (e) { $("status").textContent = e.message; }
+    }
+    $("f").onsubmit = e => { e.preventDefault(); load(); };
+    $("list").onclick = async e => {
+      const b = e.target.closest("[data-id]"); if (!b) return;
+      await fetch(`../api/suggest?key=${encodeURIComponent($("key").value)}&id=${encodeURIComponent(b.dataset.id)}`, { method: "DELETE" });
+      b.closest(".wrap-shadow").remove();
+    };
+    if ($("key").value) load();
+  </script>
+</body>
+</html>

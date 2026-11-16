@@ -1,0 +1,18 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=300
+
+/assets/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/assets/art/*
+  Cache-Control: public, max-age=2592000
+
+/sw.js
+  Cache-Control: no-cache
+
+/review/*
+  X-Robots-Tag: noindex

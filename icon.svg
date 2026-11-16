@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#d9c7a3"/>
+  <path d="M0 0h40L18 30 0 22z" fill="#6f7f86"/><path d="M40 0h24v26L30 40z" fill="#b9784a"/>
+  <path d="M0 22l18 8-6 34H0z" fill="#8a6a46"/><path d="M64 26v38H12l18-24z" fill="#efe6cf"/>
+  <path d="M18 30 40 0M30 40 64 26M18 30l12 10M12 64l6-34" stroke="#2a2420" stroke-width="2.5" fill="none"/>
+  <rect x="14" y="16" width="36" height="36" fill="#56707c" stroke="#2a2420" stroke-width="4" transform="rotate(-4 32 34)"/>
+  <text x="32" y="45" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="28" fill="#fff" transform="rotate(-4 32 34)">W</text>
+</svg>

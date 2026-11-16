@@ -1,0 +1,157 @@
+/* Wolof Wordle: two Picasso rooms borrowed from Jangal's gallery themes.
+   Day   = Cubist      (faceted planes in ochre, umber and slate)
+   Night = Blue Period (a quiet room painted only in blues)          */
+
+@font-face { font-family: 'Bricolage Grotesque'; src: url('fonts/bricolage-grotesque-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Bricolage Grotesque'; src: url('fonts/bricolage-grotesque-800.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Old Standard TT'; src: url('fonts/old-standard-tt-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Old Standard TT'; src: url('fonts/old-standard-tt-400i.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Old Standard TT'; src: url('fonts/old-standard-tt-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
+:root, [data-theme='cubist'] {
+  color-scheme: light;
+  --bg: #d9c7a3;
+  --paper: #efe6cf; --paper-2: #e6d9bb; --paper-3: #dccdab; --plaque: #f4ecd8;
+  --ink: #2a2420; --ink-2: #4b3f33; --muted: #75664f;
+  --line: #2a2420; --line-w: 3px;
+  --slate: #6f7f86; --ochre: #b9784a; --umber: #8a6a46;
+  --accent: #6f7f86; --on-accent: #fff;
+  --ok: #56707c; --ok-2: #48606b; --near: #c98a3e; --near-2: #b57a31; --tile-on: #fff;
+  --no: #5b4a3a; --no-2: #4e3f31; --no-ink: #d9c7a3;
+  --shadow: rgba(42, 36, 32, 0.35);
+  --art: url('art/cubist.webp');
+  --card-bg: linear-gradient(118deg, var(--paper) 0 58%, var(--paper-2) 58% 81%, var(--paper-3) 81%);
+  --title-bg: linear-gradient(100deg, var(--ink) 52%, var(--slate) 52%);
+  --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+  --facet: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+[data-theme='blueperiod'] {
+  color-scheme: dark;
+  --bg: #0b1626;
+  --paper: #11233b; --paper-2: #142a46; --paper-3: #17304f; --plaque: #0f1f35;
+  --ink: #dbe6f1; --ink-2: #a9bdd2; --muted: #7890aa;
+  --line: #050b14; --line-w: 3px;
+  --slate: #8fb3d9; --ochre: #c9a96a; --umber: #5f87b3;
+  --accent: #8fb3d9; --on-accent: #0b1626;
+  --ok: #7fa6d1; --ok-2: #6b93c0; --near: #c9a96a; --near-2: #b6965a; --tile-on: #0b1626;
+  --no: #34475f; --no-2: #2d3f55; --no-ink: #a3b5c9;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --art: url('art/blueperiod.webp');
+  --card-bg: linear-gradient(118deg, var(--paper) 0 58%, var(--paper-2) 58% 81%, var(--paper-3) 81%);
+  --title-bg: linear-gradient(100deg, #dbe6f1 52%, #8fb3d9 52%);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--ink); font: 17px/1.5 var(--body);
+  background: var(--bg) var(--art) center / cover fixed no-repeat;
+  display: flex; flex-direction: column;
+}
+/* iOS ignores background-attachment: fixed; a fixed layer behaves the same everywhere */
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--bg) var(--art) center / cover no-repeat; }
+a { color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ochre); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  width: 100%; max-width: 760px; margin: 0 auto; padding: 14px 14px 6px;
+}
+.logo {
+  display: inline-block; text-decoration: none; padding: 4px 14px 5px; transform: rotate(-2deg);
+  background: var(--plaque); border: var(--line-w) solid var(--line); box-shadow: 6px 5px 0 var(--shadow);
+  font: 800 clamp(1.3rem, 5vw, 1.75rem)/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.01em;
+}
+.logo span { background: var(--title-bg); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.nav { display: flex; gap: 6px; margin-left: auto; }
+.nav a, .iconbtn {
+  display: inline-grid; place-items: center; min-height: 40px; padding: 0 12px; text-decoration: none; cursor: pointer;
+  background: var(--plaque); border: 2px solid var(--line); font: 800 0.8rem var(--display); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.nav a[aria-current='page'] { background: var(--ink); color: var(--paper); clip-path: polygon(0 10%, 100% 0, 96% 100%, 3% 88%); }
+.nav a:hover { background: var(--paper-3); }
+.nav a[aria-current='page']:hover { background: var(--ink); }
+.tools { display: flex; gap: 6px; }
+.iconbtn { width: 40px; padding: 0; }
+.iconbtn svg { width: 20px; height: 20px; }
+@media (max-width: 520px) {
+  .topbar { gap: 8px; }
+  .nav { order: 3; margin-left: 0; width: 100%; }
+  .nav a { flex: 1; }
+  .tools { margin-left: auto; }
+}
+
+/* ---------- the faceted card ---------- */
+main { width: 100%; max-width: 760px; margin: 0 auto; padding: 8px 14px 24px; flex: 1; }
+.card {
+  background: var(--card-bg); border: var(--line-w) solid var(--line); clip-path: var(--facet);
+  padding: 18px; filter: drop-shadow(8px 6px 0 var(--shadow));
+}
+.wrap-shadow { filter: drop-shadow(8px 6px 0 var(--shadow)); }
+.wrap-shadow > .card { filter: none; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; line-height: 1.15; margin: 0 0 10px; }
+h2 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.italic { font-style: italic; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; cursor: pointer;
+  background: var(--plaque); border: 2px solid var(--line); text-decoration: none;
+  font: 800 0.82rem var(--display); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.btn:hover { background: var(--paper-3); }
+.btn:active { transform: translate(1px, 2px); }
+.btn.primary {
+  color: #fff; border-color: var(--line); background: linear-gradient(118deg, var(--ochre) 50%, var(--slate) 50%);
+  clip-path: polygon(4% 0, 100% 6%, 96% 100%, 0 90%); padding: 0 22px;
+}
+[data-theme='blueperiod'] .btn.primary { color: #0b1626; background: linear-gradient(118deg, #b9d0e8 50%, #8fb3d9 50%); }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.on { background: var(--ink); color: var(--paper); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- dialogs ---------- */
+dialog {
+  width: min(92vw, 440px); max-height: 88vh; overflow: auto; padding: 22px; color: var(--ink);
+  background: var(--card-bg); border: var(--line-w) solid var(--line); clip-path: var(--facet);
+}
+dialog::backdrop { background: rgba(20, 16, 12, 0.6); }
+[data-theme='blueperiod'] dialog::backdrop { background: rgba(2, 6, 12, 0.7); }
+dialog h2 { font-size: 1.35rem; transform: rotate(-1deg); }
+dialog p { margin: 0 0 10px; }
+.x { position: absolute; top: 12px; right: 18px; }
+
+/* ---------- forms ---------- */
+label { display: block; font: 800 0.75rem var(--display); text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 4px; }
+label .muted { text-transform: none; letter-spacing: 0; font: italic 400 0.85rem var(--body); }
+.field {
+  width: 100%; padding: 10px 12px; background: var(--plaque); border: 2px solid var(--line); border-radius: 0;
+  font: 1.05rem var(--body);
+}
+textarea.field { min-height: 70px; resize: vertical; }
+.field:focus { outline: 3px solid var(--ochre); outline-offset: 0; }
+
+/* ---------- toast ---------- */
+.toast {
+  position: fixed; left: 50%; top: 84px; transform: translate(-50%, -12px) rotate(-1.5deg); opacity: 0; pointer-events: none; z-index: 50;
+  padding: 8px 16px; background: var(--ink); color: var(--paper); border: 2px solid var(--line);
+  font: 800 0.95rem var(--display); transition: opacity .18s, transform .18s; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0) rotate(-1.5deg); }
+
+/* ---------- footer ---------- */
+.foot { text-align: center; padding: 6px 14px 18px; font-size: 0.85rem; }
+.foot span { background: var(--plaque); border: 2px solid var(--line); padding: 3px 10px; display: inline-block; transform: rotate(0.8deg); }
+
+/* ---------- confetti (cubist shards) ---------- */
+canvas.fx { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

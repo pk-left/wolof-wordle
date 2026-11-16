@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wolof Dictionary: Wolof to English and English to Wolof</title>
+  <meta name="description" content="Free Wolof-English dictionary. Look up a Wolof word, or find the Wolof for an English word. Search works without accents.">
+  <meta property="og:title" content="Wolof Dictionary">
+  <meta property="og:description" content="Look up Wolof words in English, and English words in Wolof.">
+  <meta name="theme-color" content="#d9c7a3">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="preload" href="../assets/fonts/bricolage-grotesque-800.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="../assets/theme.js"></script>
+  <link rel="stylesheet" href="../assets/site.css?v=1">
+  <style>
+    .search { padding: 18px 18px 20px; }
+    .search h1 { font-size: clamp(1.4rem, 5vw, 1.9rem); text-transform: uppercase; transform: rotate(-1deg); margin-bottom: 4px; }
+    .search > p { margin: 0 0 14px; }
+    .dir { display: inline-flex; border: 2px solid var(--line); margin-bottom: 10px; background: var(--plaque); }
+    .dir button {
+      min-height: 42px; padding: 0 14px; border: 0; background: none; cursor: pointer;
+      font: 800 0.78rem var(--display); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .dir button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+    .dir .swap { border-left: 2px solid var(--line); border-right: 2px solid var(--line); padding: 0 10px; font-size: 1rem; }
+    .box { position: relative; }
+    .box input { font-size: 1.25rem; padding: 12px 44px 12px 14px; }
+    .box .clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: 0; background: none; cursor: pointer; font-size: 1.4rem; color: var(--muted); }
+    .hint { margin: 8px 0 0; font-size: 0.9rem; }
+
+    .cats { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 4px; }
+    .cats button {
+      min-height: 36px; padding: 0 11px; cursor: pointer; background: var(--plaque); border: 2px solid var(--line);
+      font: 700 0.92rem var(--body);
+    }
+    .cats button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+
+    .head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 22px 0 10px; }
+    .head-row h2 { margin: 0; background: var(--plaque); border: 2px solid var(--line); padding: 4px 12px; transform: rotate(-1deg); }
+    .head-row .count { background: var(--plaque); border: 2px solid var(--line); padding: 2px 10px; font-style: italic; }
+
+    .results { display: grid; gap: 12px; }
+    .entry { padding: 14px 18px 12px; }
+    .entry:nth-child(3n+2) { transform: rotate(0.4deg); }
+    .entry:nth-child(3n) { transform: rotate(-0.35deg); }
+    .entry .top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .entry .hw { font: 800 1.45rem/1.2 var(--display); margin: 0; }
+    .entry .pos { font: italic 0.95rem var(--body); color: var(--muted); }
+    .entry .typed { font-size: 0.85rem; color: var(--muted); }
+    .entry .en { margin: 4px 0 6px; font-size: 1.08rem; }
+    .entry .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
+    .tag { border: 2px solid var(--line); padding: 0 8px; background: var(--plaque); font: 800 0.68rem/1.8 var(--display); text-transform: uppercase; letter-spacing: 0.06em; }
+    .tag.game { background: linear-gradient(118deg, var(--ok) 55%, var(--ok-2) 55%); color: var(--tile-on); }
+    .linkbtn { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; font-style: italic; color: var(--muted); margin-left: auto; }
+    mark { background: color-mix(in srgb, var(--near) 55%, transparent); color: inherit; padding: 0 1px; }
+    [data-theme='blueperiod'] mark { background: var(--near); color: #0b1626; }
+
+    .empty { padding: 20px; text-align: center; }
+    .empty p { margin: 0 0 12px; }
+    .wotd { padding: 16px 18px; margin-top: 18px; }
+    .wotd .label { font: 800 0.72rem var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .wotd .hw { font: 800 2rem/1.1 var(--display); margin: 2px 0; }
+    .suggest-bar { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 26px 0 0; padding: 14px; }
+    .suggest-bar p { margin: 0; }
+
+    .seg { display: flex; border: 2px solid var(--line); background: var(--plaque); }
+    .seg label { flex: 1; margin: 0; text-align: center; cursor: pointer; padding: 9px 6px; }
+    .seg input { position: absolute; opacity: 0; }
+    .seg label:has(input:checked) { background: var(--ink); color: var(--paper); }
+    .seg label:has(input:focus-visible) { outline: 3px solid var(--ochre); outline-offset: -3px; }
+    .hp { position: absolute; left: -9999px; }
+    .sent { text-align: center; }
+  </style>
+</head>
+<body data-page="dictionary">
+  <main>
+    <div class="wrap-shadow">
+      <section class="card search">
+        <h1>Wolof dictionary</h1>
+        <p class="muted italic">Look up a Wolof word, or find the Wolof for an English one.</p>
+        <div class="dir" role="group" aria-label="Search direction">
+          <button id="dirWo" aria-pressed="true">Wolof &rarr; English</button>
+          <button class="swap" id="swap" aria-label="Swap direction">&#8646;</button>
+          <button id="dirEn" aria-pressed="false">English &rarr; Wolof</button>
+        </div>
+        <div class="box">
+          <label for="q" class="sr">Search</label>
+          <input class="field" id="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+          <button class="clear" id="clear" aria-label="Clear search" hidden>&times;</button>
+        </div>
+        <p class="hint muted" id="hint"></p>
+      </section>
+    </div>
+
+    <div id="browse">
+      <div class="cats" id="cats" role="group" aria-label="Browse by topic"></div>
+      <div class="wrap-shadow"><section class="card wotd" id="wotd"></section></div>
+    </div>
+
+    <div class="head-row"><h2 id="listTitle"></h2><span class="count" id="count"></span></div>
+    <div class="results" id="results" aria-live="polite"></div>
+
+    <div class="wrap-shadow"><div class="card suggest-bar">
+      <p>Know a word that's missing, or spotted a mistake?</p>
+      <button class="btn primary" id="suggestBtn">Suggest a word</button>
+    </div></div>
+  </main>
+  <footer class="foot"><span>A starter dictionary that grows with your suggestions. Spellings vary between Gambian and Senegalese Wolof.</span></footer>
+
+  <dialog id="suggest">
+    <form id="sForm" method="dialog">
+      <h2 id="sTitle">Suggest a word</h2>
+      <div class="seg" role="radiogroup" aria-label="What are you sending?">
+        <label><input type="radio" name="kind" value="new" checked> A new word</label>
+        <label><input type="radio" name="kind" value="fix"> A correction</label>
+      </div>
+      <label for="sWo">Wolof word</label>
+      <input class="field" id="sWo" name="wolof" required maxlength="80" autocomplete="off" autocapitalize="off">
+      <label for="sEn">What it means in English</label>
+      <input class="field" id="sEn" name="english" required maxlength="200" autocomplete="off">
+      <label for="sNote">Anything else <span class="muted">(how it's used, a correction, where it's said)</span></label>
+      <textarea class="field" id="sNote" name="note" maxlength="600"></textarea>
+      <label for="sName">Your name <span class="muted">(optional, to thank you)</span></label>
+      <input class="field" id="sName" name="who" maxlength="60" autocomplete="name">
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="row" style="justify-content:center;margin-top:16px">
+        <button class="btn primary" type="submit" id="sSend">Send</button>
+        <button class="btn" type="button" id="sCancel">Cancel</button>
+      </div>
+    </form>
+    <div class="sent" id="sDone" hidden>
+      <h2>Jërëjëf!</h2>
+      <p id="sDoneMsg">Thank you. Your word will be checked before it's added.</p>
+      <button class="btn primary" id="sClose">Close</button>
+    </div>
+  </dialog>
+
+  <script src="../assets/site.js?v=1"></script>
+  <script src="../data/words.js?v=1"></script>
+  <script src="../data/dict.js?v=1"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const POS = { n: "noun", v: "verb", adj: "describing word", adv: "adverb", num: "number", pron: "pronoun", q: "question word", phr: "phrase", intj: "expression", conj: "joining word" };
+    const gameWords = new Set(WORDS.map(w => w[0]));
+
+    // Every Wordle answer is in the dictionary; anything added to words.js later shows up too.
+    const entries = DICT.map(([w, pos, en, cat]) => ({ w, pos, en, cat }));
+    const have = new Set(entries.map(e => plain(e.w)));
+    WORDS.forEach(([w, en]) => { if (!have.has(w)) entries.push({ w, pos: "", en, cat: "more" }); });
+    const cats = { ...CATEGORIES };
+    if (entries.some(e => e.cat === "more")) cats.more = "More words";
+    entries.forEach(e => {
+      e.key = plain(e.w).replace(/[?!.]/g, "").trim();
+      e.game = gameWords.has(e.key);
+      // the English meaning split into its senses, without the bits in brackets: "to go back, to return" -> ["go back", "return"]
+      e.senses = e.en.toLowerCase().replace(/\([^)]*\)/g, "").split(/[;,]/).map(s => s.trim().replace(/^(to|a|an|the) /, "")).filter(Boolean);
+    });
+
+    let dir = "wo", cat = "greet";
+
+    // ---------- search ----------
+    function searchWolof(q) {
+      const p = plain(q).replace(/[?!.]/g, "").trim();
+      if (!p) return [];
+      return entries.map(e => {
+        let s = 0;
+        if (e.key === p) s = 100;
+        else if (e.key.startsWith(p)) s = 80 - (e.key.length - p.length);
+        else if (e.key.split(/[\s-]/).some(part => part.startsWith(p))) s = 60;
+        else if (p.length > 2 && e.key.includes(p)) s = 40;
+        return [s, e];
+      }).filter(x => x[0] > 0).sort((a, b) => b[0] - a[0] || a[1].key.length - b[1].key.length).map(x => x[1]);
+    }
+    function searchEnglish(q) {
+      const p = q.toLowerCase().trim().replace(/^(to|a|an|the) /, "");
+      if (!p) return [];
+      const word = new RegExp("\\b" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+      return entries.map(e => {
+        let s = 0;
+        if (e.senses.includes(p)) s = 100 - e.senses.indexOf(p) * 5;
+        else if (e.senses.some(x => x.startsWith(p + " ") || x.endsWith(" " + p))) s = 70;
+        else if (word.test(e.en.toLowerCase())) s = 50;
+        else if (p.length > 2 && e.en.toLowerCase().includes(p)) s = 20;
+        return [s, e];
+      }).filter(x => x[0] > 0).sort((a, b) => b[0] - a[0] || a[1].en.length - b[1].en.length).map(x => x[1]);
+    }
+
+    // ---------- drawing ----------
+    function highlight(text, q, wolof) {
+      const safe = escapeHtml(text);
+      if (!q) return safe;
+      if (wolof) {
+        // match on the accent-free form but mark the real letters
+        const p = plain(q).trim(), i = plain(text).indexOf(p);
+        if (!p || i < 0) return safe;
+        return escapeHtml(text.slice(0, i)) + "<mark>" + escapeHtml(text.slice(i, i + p.length)) + "</mark>" + escapeHtml(text.slice(i + p.length));
+      }
+      const p = q.toLowerCase().trim().replace(/^(to|a|an|the) /, "");
+      if (p.length < 2) return safe;
+      return safe.replace(new RegExp("(" + escapeHtml(p).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>");
+    }
+    function card(e, q, qdir) {
+      const typed = plain(e.w) !== e.w.toLowerCase() ? `<span class="typed">type: ${escapeHtml(plain(e.w))}</span>` : "";
+      return `<article class="wrap-shadow"><div class="card entry">
+        <div class="top"><h3 class="hw">${highlight(e.w, qdir === "wo" ? q : "", true)}</h3>${e.pos ? `<span class="pos">${POS[e.pos]}</span>` : ""}${typed}</div>
+        <p class="en">${highlight(e.en, qdir === "en" ? q : "", false)}</p>
+        <div class="meta"><span class="tag">${escapeHtml(cats[e.cat] || "")}</span>${e.game ? '<span class="tag game" title="This word can come up in Wolof Wordle">In the game</span>' : ""}
+          <button class="linkbtn" data-fix="${escapeHtml(e.w)}">Suggest a fix</button></div>
+      </div></article>`;
+    }
+
+    function render() {
+      const q = $("q").value;
+      $("clear").hidden = !q;
+      $("hint").textContent = dir === "wo"
+        ? "Type with or without accents: jerejef finds jërëjëf."
+        : "Try: water, friend, thank you, to go";
+      $("q").placeholder = dir === "wo" ? "Type a Wolof word, like ataya" : "Type an English word, like water";
+      $("dirWo").setAttribute("aria-pressed", dir === "wo");
+      $("dirEn").setAttribute("aria-pressed", dir === "en");
+      const url = new URL(location.href);
+      url.search = "";
+      if (q) url.searchParams.set("q", q);
+      if (dir === "en") url.searchParams.set("d", "en");
+      history.replaceState(null, "", url);
+
+      if (!q.trim()) {
+        $("browse").hidden = false;
+        $("cats").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.cat === cat));
+        const list = entries.filter(e => e.cat === cat);
+        $("listTitle").textContent = cats[cat];
+        $("count").textContent = `${list.length} words`;
+        $("results").innerHTML = list.map(e => card(e)).join("");
+        return;
+      }
+      $("browse").hidden = true;
+      let found = dir === "wo" ? searchWolof(q) : searchEnglish(q), shownDir = dir, note = "";
+      if (!found.length) {
+        // nothing this way round: maybe they typed English in the Wolof box, or the other way
+        const other = dir === "wo" ? searchEnglish(q) : searchWolof(q);
+        if (other.length) { found = other; shownDir = dir === "wo" ? "en" : "wo"; note = dir === "wo" ? " (searched the English meanings)" : " (searched the Wolof words)"; }
+      }
+      $("listTitle").textContent = `Results for “${q.trim()}”`;
+      $("count").textContent = found.length ? `${found.length} found${note}` : "nothing yet";
+      if (!found.length) {
+        $("results").innerHTML = `<div class="wrap-shadow"><div class="card empty">
+          <p><b>“${escapeHtml(q.trim())}”</b> isn't in the dictionary yet.</p>
+          <p class="muted">The dictionary is new and grows with suggestions from people who speak Wolof.</p>
+          <button class="btn primary" id="suggestMissing">Suggest it</button></div></div>`;
+        $("suggestMissing").onclick = () => openSuggest("new", dir === "wo" ? q.trim() : "", dir === "en" ? q.trim() : "");
+        return;
+      }
+      $("results").innerHTML = found.slice(0, 60).map(e => card(e, q, shownDir)).join("");
+    }
+
+    // word of the day: never a Wordle answer, so it can't spoil the game
+    function wordOfTheDay() {
+      const pool = entries.filter(e => !e.game && e.cat !== "numbers");
+      const e = pool[Math.floor(seededRandom(dayNumber() + 77)() * pool.length)];
+      $("wotd").innerHTML = `<div class="label">Word of the day</div><div class="hw">${escapeHtml(e.w)}</div>
+        <div><span class="muted italic">${POS[e.pos] || ""}</span> &middot; ${escapeHtml(e.en)}</div>`;
+    }
+
+    // ---------- controls ----------
+    $("cats").innerHTML = Object.entries(cats).map(([k, v]) => `<button data-cat="${k}" aria-pressed="false">${v}</button>`).join("");
+    $("cats").onclick = e => { const b = e.target.closest("button"); if (b) { cat = b.dataset.cat; render(); } };
+    $("dirWo").onclick = () => { dir = "wo"; render(); $("q").focus(); };
+    $("dirEn").onclick = () => { dir = "en"; render(); $("q").focus(); };
+    $("swap").onclick = () => { dir = dir === "wo" ? "en" : "wo"; render(); $("q").focus(); };
+    let t;
+    $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 90); });
+    $("q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("q").blur(); } });
+    $("clear").onclick = () => { $("q").value = ""; render(); $("q").focus(); };
+    $("results").addEventListener("click", e => {
+      const b = e.target.closest("[data-fix]");
+      if (b) { const en = entries.find(x => x.w === b.dataset.fix); openSuggest("fix", b.dataset.fix, en ? en.en : ""); }
+    });
+
+    // ---------- suggestions ----------
+    // Sent to /api/suggest (a Cloudflare Pages Function). With no signal, they wait on the
+    // phone and go out the next time the dictionary opens.
+    const dlg = $("suggest"), form = $("sForm");
+    function openSuggest(kind = "new", wolof = "", english = "") {
+      form.reset();
+      form.kind.value = kind;
+      form.wolof.value = wolof; form.english.value = english;
+      form.who.value = store.get("name", "");
+      $("sTitle").textContent = kind === "fix" ? "Suggest a correction" : "Suggest a word";
+      form.hidden = false; $("sDone").hidden = true;
+      dlg.showModal();
+      (wolof ? (kind === "fix" ? form.note : form.english) : form.wolof).focus();
+    }
+    form.addEventListener("change", e => { if (e.target.name === "kind") $("sTitle").textContent = form.kind.value === "fix" ? "Suggest a correction" : "Suggest a word"; });
+    async function send(item) {
+      const res = await fetch(new URL("api/suggest", ROOT), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+      if (!res.ok) throw new Error(res.status);
+    }
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const item = Object.fromEntries(new FormData(form));
+      item.wolof = item.wolof.trim(); item.english = item.english.trim();
+      if (!item.wolof || !item.english) return;
+      if (item.who) store.set("name", item.who.trim());
+      $("sSend").disabled = true;
+      try { await send(item); $("sDoneMsg").textContent = "Thank you. Your suggestion will be checked before it's added."; }
+      catch {
+        const outbox = store.get("outbox", []); outbox.push(item); store.set("outbox", outbox);
+        $("sDoneMsg").textContent = "Saved on your phone. It will send by itself next time you're online and open the dictionary.";
+      }
+      $("sSend").disabled = false;
+      sfx.ok();
+      form.hidden = true; $("sDone").hidden = false;
+    });
+    $("sCancel").onclick = () => dlg.close();
+    $("sClose").onclick = () => dlg.close();
+    $("suggestBtn").onclick = () => openSuggest("new", dir === "wo" ? $("q").value.trim() : "", dir === "en" ? $("q").value.trim() : "");
+    (async function flushOutbox() {
+      const outbox = store.get("outbox", []);
+      if (!outbox.length || !navigator.onLine) return;
+      const left = [];
+      for (const item of outbox) { try { await send(item); } catch { left.push(item); } }
+      store.set("outbox", left);
+    })();
+
+    // ---------- start ----------
+    const params = new URLSearchParams(location.search);
+    if (params.get("d") === "en") dir = "en";
+    $("q").value = params.get("q") || "";
+    wordOfTheDay();
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Wolof Wordle: guess today's Wolof word</title>
+  <meta name="description" content="Guess today's 5-letter Wolof word in six tries, then look up any Wolof word in the free Wolof-English dictionary.">
+  <meta property="og:title" content="Wolof Wordle">
+  <meta property="og:description" content="Guess today's 5-letter Wolof word in six tries. With a Wolof-English dictionary.">
+  <meta name="theme-color" content="#d9c7a3">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/bricolage-grotesque-800.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css?v=1">
+  <style>
+    main { display: flex; flex-direction: column; align-items: center; }
+    .game { width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; padding: 16px 12px 18px; }
+    .modes { display: flex; gap: 8px; margin-bottom: 8px; }
+    #sub { margin: 0 0 12px; font-style: italic; }
+
+    .board { display: grid; gap: 7px; margin-bottom: 18px; }
+    .rowg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .rowg.shake { animation: shake .35s; }
+    @keyframes shake { 20%, 60% { transform: translateX(-7px) rotate(-1deg); } 40%, 80% { transform: translateX(7px) rotate(1deg); } }
+    .tileg {
+      width: min(15vw, 60px); height: min(15vw, 60px); display: grid; place-items: center;
+      font: 800 clamp(1.25rem, 6vw, 1.9rem) var(--display); text-transform: uppercase;
+      background: var(--plaque); border: var(--line-w) solid color-mix(in srgb, var(--line) 35%, transparent); color: var(--ink);
+    }
+    .tileg.filled { border-color: var(--line); animation: pop .12s; }
+    @keyframes pop { 50% { transform: scale(1.08) rotate(-2deg); } }
+    /* two planes per tile, seen from two sides at once */
+    .tileg.ok   { background: linear-gradient(118deg, var(--ok) 0 55%, var(--ok-2) 55%); border-color: var(--line); color: var(--tile-on); }
+    .tileg.near { background: linear-gradient(118deg, var(--near) 0 55%, var(--near-2) 55%); border-color: var(--line); color: var(--tile-on); }
+    .tileg.no   { background: linear-gradient(118deg, var(--no) 0 55%, var(--no-2) 55%); border-color: var(--line); color: var(--no-ink); }
+    .tileg.flip { animation: flip .36s ease-in-out both; }
+    @keyframes flip { 50% { transform: rotateX(90deg); } }
+    .rowg.won .tileg { animation: hop .5s ease both; }
+    .rowg.won .tileg:nth-child(2) { animation-delay: .08s; } .rowg.won .tileg:nth-child(3) { animation-delay: .16s; }
+    .rowg.won .tileg:nth-child(4) { animation-delay: .24s; } .rowg.won .tileg:nth-child(5) { animation-delay: .32s; }
+    @keyframes hop { 40% { transform: translateY(-16px) rotate(-4deg); } 70% { transform: translateY(2px); } }
+
+    .kb { width: 100%; display: grid; gap: 6px; user-select: none; -webkit-user-select: none; }
+    .kb .r { display: flex; gap: 5px; justify-content: center; }
+    .key {
+      flex: 1; height: 54px; max-width: 46px; padding: 0; cursor: pointer; touch-action: manipulation;
+      font: 800 1.1rem var(--display); text-transform: uppercase; color: var(--ink);
+      background: var(--plaque); border: 2px solid var(--line);
+    }
+    .key.wide { flex: 1.6; max-width: 72px; font-size: 0.7rem; letter-spacing: 0.04em; }
+    .key:active { transform: translateY(2px); }
+    .key.ok   { background: var(--ok);   color: var(--tile-on); }
+    .key.near { background: var(--near); color: var(--tile-on); }
+    .key.no   { background: var(--no);   color: var(--no-ink); }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; margin: 16px 0; }
+    .stats b { display: block; font: 800 1.5rem var(--display); }
+    .stats span { font-size: 0.85rem; color: var(--muted); }
+    .meaning { background: var(--plaque); border: 2px solid var(--line); padding: 12px 14px; transform: rotate(-0.6deg); }
+    .meaning .w { font: 800 1.5rem var(--display); display: block; text-transform: lowercase; }
+    .meaning .written { font-style: italic; color: var(--muted); font-size: 0.9rem; }
+    .meaning a { display: inline-block; margin-top: 6px; font-style: italic; }
+    .ex { display: flex; gap: 4px; margin: 6px 0 4px; }
+    .ex .tileg { width: 38px; height: 38px; font-size: 1rem; }
+    .dlg-actions { justify-content: center; margin-top: 4px; }
+  </style>
+</head>
+<body data-page="play">
+  <main>
+    <div class="wrap-shadow" style="width:100%;max-width:520px">
+      <section class="card game" aria-label="Wolof Wordle game">
+        <div class="modes" role="group" aria-label="Game mode">
+          <button class="btn on" id="dailyBtn">Daily</button>
+          <button class="btn" id="practiceBtn">Practice</button>
+        </div>
+        <p class="muted" id="sub"></p>
+        <div class="board" id="board" aria-live="polite"></div>
+        <div class="kb" id="kb"></div>
+      </section>
+    </div>
+  </main>
+  <footer class="foot"><span>New to a word? <a href="dictionary/">Look it up in the dictionary</a></span></footer>
+
+  <dialog id="help">
+    <h2>How to play</h2>
+    <p>Guess the 5-letter Wolof word in 6 tries. After each guess the tiles change colour.</p>
+    <div class="ex"><div class="tileg ok">a</div><div class="tileg filled">t</div><div class="tileg filled">a</div><div class="tileg filled">y</div><div class="tileg filled">a</div></div>
+    <p class="muted"><b>Slate blue</b>: right letter, right place.</p>
+    <div class="ex"><div class="tileg filled">s</div><div class="tileg near">a</div><div class="tileg filled">b</div><div class="tileg filled">a</div><div class="tileg filled">r</div></div>
+    <p class="muted"><b>Ochre</b>: the letter is in the word, somewhere else.</p>
+    <div class="ex"><div class="tileg filled">x</div><div class="tileg filled">a</div><div class="tileg filled">r</div><div class="tileg no">i</div><div class="tileg filled">t</div></div>
+    <p class="muted"><b>Umber</b>: the letter is not in the word.</p>
+    <p>Type words without accents: ë is typed as e, ñ as n. <b>Daily</b> gives everyone the same word, new at midnight. <b>Practice</b> gives you as many words as you like.</p>
+    <p>Don't know a word? The <a href="dictionary/">dictionary</a> works both ways, Wolof to English and English to Wolof.</p>
+    <div class="row dlg-actions"><button class="btn primary" onclick="this.closest('dialog').close()">Play</button></div>
+  </dialog>
+
+  <dialog id="done">
+    <h2 id="doneTitle"></h2>
+    <div class="meaning" id="meaning"></div>
+    <div class="stats" id="stats"></div>
+    <div class="row dlg-actions">
+      <button class="btn primary" id="shareBtn" autofocus>Share</button>
+      <button class="btn" id="againBtn">New word</button>
+      <button class="btn" onclick="this.closest('dialog').close()">Close</button>
+    </div>
+    <p class="muted center italic" id="next" style="margin:14px 0 0"></p>
+  </dialog>
+
+  <script src="assets/site.js?v=1"></script>
+  <script src="data/words.js?v=1"></script>
+  <script src="data/dict.js?v=1"></script>
+  <script>
+    const ROWS = 6, LEN = 5;
+    const day = dayNumber();
+    // The same fixed shuffle PK Arcade used, so the daily word carries on where it left off.
+    const ORDER = shuffle(WORDS.map((_, i) => i), seededRandom(2026));
+    const dailyWord = WORDS[ORDER[((day % WORDS.length) + WORDS.length) % WORDS.length]];
+    const byPlain = {};
+    DICT.forEach(([w, pos, en]) => { byPlain[plain(w)] ??= { w, pos, en }; });
+
+    let mode = "daily", answer, meaning, state, current = "", busy = false;
+    const stats = store.get("stats", { played: 0, wins: 0, streak: 0, best: 0, lastWinDay: null });
+    const board = document.getElementById("board"), kb = document.getElementById("kb");
+    const $ = id => document.getElementById(id);
+
+    for (let r = 0; r < ROWS; r++) {
+      const row = document.createElement("div");
+      row.className = "rowg";
+      for (let c = 0; c < LEN; c++) row.appendChild(Object.assign(document.createElement("div"), { className: "tileg" }));
+      board.appendChild(row);
+    }
+    ["qwertyuiop", "asdfghjkl", "+zxcvbnm-"].forEach(line => {
+      const r = document.createElement("div");
+      r.className = "r";
+      for (const ch of line) {
+        const k = document.createElement("button");
+        k.className = "key";
+        if (ch === "+") { k.textContent = "Enter"; k.classList.add("wide"); k.dataset.k = "Enter"; }
+        else if (ch === "-") { k.innerHTML = "&#9003;"; k.classList.add("wide"); k.dataset.k = "Backspace"; k.setAttribute("aria-label", "Delete"); k.style.fontSize = "1.3rem"; }
+        else { k.textContent = ch; k.dataset.k = ch; }
+        r.appendChild(k);
+      }
+      kb.appendChild(r);
+    });
+    kb.addEventListener("click", e => { const k = e.target.closest(".key"); if (k) { press(k.dataset.k); k.blur(); } });
+    document.addEventListener("keydown", e => {
+      if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
+      if (e.key === "Enter" || e.key === "Backspace") { e.preventDefault(); press(e.key); }
+      else if (/^[a-zëñéàó]$/i.test(e.key)) press(plain(e.key));
+    });
+
+    function start(newMode) {
+      mode = newMode; current = ""; busy = false;
+      if (mode === "daily") {
+        [answer, meaning] = dailyWord;
+        state = store.get("today", null);
+        if (!state || state.day !== day || state.answer !== answer) state = { day, answer, guesses: [], finished: false, won: false };
+        $("sub").textContent = `Daily word #${day + 1}`;
+      } else {
+        [answer, meaning] = WORDS[Math.floor(Math.random() * WORDS.length)];
+        state = { guesses: [], finished: false, won: false };
+        $("sub").textContent = "Practice: a random word, play as many as you like";
+      }
+      $("dailyBtn").classList.toggle("on", mode === "daily");
+      $("practiceBtn").classList.toggle("on", mode === "practice");
+      for (let r = 0; r < ROWS; r++) { board.children[r].classList.remove("won"); paintRow(r, state.guesses[r] || "", state.guesses[r] ? score(state.guesses[r]) : null, false); }
+      paintKeys();
+      if (state.finished) setTimeout(showDone, 300);
+    }
+
+    function score(guess) {
+      // Two passes so repeated letters are coloured correctly (think of "ataya")
+      const res = Array(LEN).fill("no"), left = {};
+      for (let i = 0; i < LEN; i++) {
+        if (guess[i] === answer[i]) res[i] = "ok"; else left[answer[i]] = (left[answer[i]] || 0) + 1;
+      }
+      for (let i = 0; i < LEN; i++) {
+        if (res[i] !== "ok" && left[guess[i]] > 0) { res[i] = "near"; left[guess[i]]--; }
+      }
+      return res;
+    }
+
+    function paintRow(r, word, colours, animate) {
+      const tiles = board.children[r].children;
+      for (let i = 0; i < LEN; i++) {
+        tiles[i].textContent = word[i] || "";
+        tiles[i].className = "tileg" + (word[i] ? " filled" : "");
+        if (!colours) continue;
+        if (animate) setTimeout(() => { tiles[i].classList.add("flip"); sfx.flip(); setTimeout(() => tiles[i].classList.add(colours[i]), 180); }, i * 240);
+        else tiles[i].classList.add(colours[i]);
+      }
+    }
+
+    function paintKeys() {
+      const rank = { no: 1, near: 2, ok: 3 }, best = {};
+      state.guesses.forEach(g => score(g).forEach((c, i) => { if (!best[g[i]] || rank[c] > rank[best[g[i]]]) best[g[i]] = c; }));
+      kb.querySelectorAll(".key").forEach(k => {
+        k.classList.remove("ok", "near", "no");
+        if (best[k.dataset.k]) k.classList.add(best[k.dataset.k]);
+      });
+    }
+
+    function press(k) {
+      if (state.finished || busy) return;
+      if (k === "Backspace") { if (!current) return; current = current.slice(0, -1); sfx.del(); }
+      else if (k === "Enter") return submit();
+      else if (current.length < LEN) { current += k; sfx.key(); }
+      paintRow(state.guesses.length, current);
+    }
+
+    function submit() {
+      const r = state.guesses.length;
+      if (current.length < LEN) {
+        const row = board.children[r];
+        row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake");
+        sfx.bad();
+        return toast("Not enough letters");
+      }
+      const guess = current;
+      state.guesses.push(guess); current = ""; busy = true;
+      paintRow(r, guess, score(guess), true);
+      setTimeout(() => { paintKeys(); busy = false; }, LEN * 240 + 120);
+      if (guess === answer || state.guesses.length === ROWS) {
+        state.finished = true; state.won = guess === answer;
+        if (mode === "daily") updateStats();
+        setTimeout(() => {
+          if (state.won) { board.children[r].classList.add("won"); sfx.win(); confetti(); toast(["Jamm rekk!", "Rafet na!", "Waaw!", "Baax na!", "Phew!", "Just made it!"][r]); }
+          else { sfx.lose(); toast(answer.toUpperCase(), 2400); }
+          setTimeout(showDone, 1400);
+        }, LEN * 240 + 260);
+      }
+      if (mode === "daily") store.set("today", state);
+    }
+
+    function updateStats() {
+      stats.played++;
+      if (state.won) {
+        stats.wins++;
+        stats.streak = stats.lastWinDay === day - 1 ? stats.streak + 1 : 1;
+        stats.best = Math.max(stats.best, stats.streak);
+        stats.lastWinDay = day;
+      } else stats.streak = 0;
+      store.set("stats", stats);
+    }
+
+    function resultText() {
+      const emoji = { ok: "🟦", near: "🟧", no: "🟫" };
+      const grid = state.guesses.map(g => score(g).map(c => emoji[c]).join("")).join("\n");
+      const label = mode === "daily" ? `#${day + 1}` : "practice";
+      return `Wolof Wordle ${label} ${state.won ? state.guesses.length : "X"}/6\n\n${grid}\n\n${location.origin}/`;
+    }
+
+    function showDone() {
+      $("doneTitle").textContent = state.won ? "Rafet na!" : "Next time";
+      const d = byPlain[answer];
+      const written = d && d.w !== answer ? `<span class="written">written ${escapeHtml(d.w)}</span><br>` : "";
+      $("meaning").innerHTML = `<span class="w">${escapeHtml(answer)}</span>${written}${escapeHtml(meaning)}<br>
+        <a href="dictionary/?q=${encodeURIComponent(answer)}">See it in the dictionary &rarr;</a>`;
+      const pct = stats.played ? Math.round(100 * stats.wins / stats.played) : 0;
+      $("stats").innerHTML = [[stats.played, "Played"], [pct, "Win %"], [stats.streak, "Streak"], [stats.best, "Best"]]
+        .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("");
+      const now = new Date(), midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+      const h = Math.floor((midnight - now) / 3600000), m = Math.floor((midnight - now) / 60000) % 60;
+      $("next").textContent = mode === "daily" ? `Next daily word in ${h}h ${m}m` : "";
+      $("againBtn").textContent = mode === "daily" ? "Practice" : "New word";
+      $("done").showModal();
+    }
+    $("shareBtn").onclick = () => shareText(resultText());
+    $("againBtn").onclick = () => { $("done").close(); start("practice"); };
+    $("helpBtn").onclick = () => $("help").showModal();
+    $("dailyBtn").onclick = () => start("daily");
+    $("practiceBtn").onclick = () => start("practice");
+
+    start("daily");
+    if (!state.finished && !store.get("seen-help", false)) { $("help").showModal(); store.set("seen-help", true); }
+  </script>
+</body>
+</html>
