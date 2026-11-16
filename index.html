@@ -131,6 +131,9 @@
   <script>
     const ROWS = 6, LEN = 5;
     const day = dayNumber();
+    // Wolof Wordle got its own site on 16 November 2026: that day is daily word #1.
+    // (the word itself still follows the same order as before)
+    const dailyNo = dayNumber(Date.UTC(2026, 10, 16)) + 1;
     // The same fixed shuffle PK Arcade used, so the daily word carries on where it left off.
     const ORDER = shuffle(WORDS.map((_, i) => i), seededRandom(2026));
     const dailyWord = WORDS[ORDER[((day % WORDS.length) + WORDS.length) % WORDS.length]];
@@ -175,7 +178,7 @@
         [answer, meaning] = dailyWord;
         state = store.get("today", null);
         if (!state || state.day !== day || state.answer !== answer) state = { day, answer, guesses: [], finished: false, won: false, hints: 0 };
-        $("sub").textContent = `Daily word #${day + 1}`;
+        $("sub").textContent = `Daily word #${dailyNo}`;
       } else {
         [answer, meaning] = WORDS[Math.floor(Math.random() * WORDS.length)];
         state = { guesses: [], finished: false, won: false, hints: 0 };
@@ -294,7 +297,7 @@
     function resultText() {
       const emoji = { ok: "🟦", near: "🟧", no: "🟫" };
       const grid = state.guesses.map(g => score(g).map(c => emoji[c]).join("")).join("\n");
-      const label = mode === "daily" ? `#${day + 1}` : "practice";
+      const label = mode === "daily" ? `#${dailyNo}` : "practice";
       const hints = state.hints ? ` · ${"💡".repeat(state.hints)}` : "";
       return `Wolof Wordle ${label} ${state.won ? state.guesses.length : "X"}/6${hints}\n\n${grid}\n\n${location.origin}/`;
     }
