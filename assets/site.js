@@ -163,5 +163,13 @@ buildShell();
 
 // Offline: the service worker keeps a copy of the site on the phone.
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  addEventListener("load", () => navigator.serviceWorker.register(new URL("sw.js", ROOT)).catch(() => {}));
+  addEventListener("load", () => navigator.serviceWorker.register(new URL("sw.js", ROOT)).then(r => r.update()).catch(() => {}));
+  // when a new version of the site takes over, reload once so it shows straight away
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
 }
