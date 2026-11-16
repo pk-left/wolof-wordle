@@ -1,9 +1,9 @@
 // Service worker: keeps a copy of the site on the phone so it opens with no data.
 // Answers from the saved copy straight away and refreshes it in the background.
 // The suggestion API is never cached.
-const CACHE = "wolof-wordle-v2";
+const CACHE = "wolof-wordle-v3";
 const FILES = [
-  "/", "/dictionary/", "/data/words.js?v=1", "/data/dict.js?v=1",
+  "/", "/dictionary/", "/data/words.js?v=1", "/data/dict.js?v=1", "/data/hints.js?v=1",
   "/assets/site.css?v=2", "/assets/site.js?v=1", "/assets/theme.js",
   "/assets/fonts/bricolage-grotesque-400.woff2", "/assets/fonts/bricolage-grotesque-800.woff2",
   "/assets/fonts/old-standard-tt-400.woff2", "/assets/fonts/old-standard-tt-400i.woff2", "/assets/fonts/old-standard-tt-700.woff2",

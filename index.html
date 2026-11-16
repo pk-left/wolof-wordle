@@ -64,6 +64,19 @@
     .ex { display: flex; gap: 4px; margin: 6px 0 4px; }
     .ex .tileg { width: 38px; height: 38px; font-size: 1rem; }
     .dlg-actions { justify-content: center; margin-top: 4px; }
+    #hintBtn { gap: 6px; }
+    #hintBtn svg { width: 16px; height: 16px; }
+    #hintBtn[disabled] { opacity: .45; cursor: default; }
+    .hints { width: 100%; display: grid; gap: 6px; margin: -2px 0 12px; }
+    .hints:empty { display: none; }
+    .hint {
+      background: var(--plaque); border: 2px solid var(--line); padding: 7px 12px; font-size: 0.98rem;
+      animation: hintIn .3s ease both;
+    }
+    .hint:nth-child(1) { transform: rotate(-0.6deg); }
+    .hint:nth-child(2) { transform: rotate(0.5deg); font-style: italic; }
+    .hint b { font: 800 0.7rem var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-right: 6px; font-style: normal; }
+    @keyframes hintIn { from { opacity: 0; transform: translateY(-6px) rotate(-2deg); } }
   </style>
 </head>
 <body data-page="play">
@@ -73,8 +86,10 @@
         <div class="modes" role="group" aria-label="Game mode">
           <button class="btn on" id="dailyBtn">Daily</button>
           <button class="btn" id="practiceBtn">Practice</button>
+          <button class="btn" id="hintBtn" aria-label="Get a hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3 6 9l2 6h8l2-6z"/><path d="M9 19h6M10 22h4"/></svg><span>Hint</span></button>
         </div>
         <p class="muted" id="sub"></p>
+        <div class="hints" id="hints" aria-live="polite"></div>
         <div class="board" id="board" aria-live="polite"></div>
         <div class="kb" id="kb"></div>
       </section>
@@ -92,6 +107,7 @@
     <div class="ex"><div class="tileg filled">x</div><div class="tileg filled">a</div><div class="tileg filled">r</div><div class="tileg no">i</div><div class="tileg filled">t</div></div>
     <p class="muted"><b>Umber</b>: the letter is not in the word.</p>
     <p>Type words without accents: ë is typed as e, ñ as n. <b>Daily</b> gives everyone the same word, new at midnight. <b>Practice</b> gives you as many words as you like.</p>
+    <p>Stuck? Tap <b>Hint</b> once for the word's topic, and again for a clue about what it means.</p>
     <p>Don't know a word? The <a href="dictionary/">dictionary</a> works both ways, Wolof to English and English to Wolof.</p>
     <div class="row dlg-actions"><button class="btn primary" onclick="this.closest('dialog').close()">Play</button></div>
   </dialog>
@@ -111,6 +127,7 @@
   <script src="assets/site.js?v=1"></script>
   <script src="data/words.js?v=1"></script>
   <script src="data/dict.js?v=1"></script>
+  <script src="data/hints.js?v=1"></script>
   <script>
     const ROWS = 6, LEN = 5;
     const day = dayNumber();
@@ -118,7 +135,8 @@
     const ORDER = shuffle(WORDS.map((_, i) => i), seededRandom(2026));
     const dailyWord = WORDS[ORDER[((day % WORDS.length) + WORDS.length) % WORDS.length]];
     const byPlain = {};
-    DICT.forEach(([w, pos, en]) => { byPlain[plain(w)] ??= { w, pos, en }; });
+    DICT.forEach(([w, pos, en, cat]) => { byPlain[plain(w)] ??= { w, pos, en, cat }; });
+    const KIND = { n: "a thing (noun)", v: "an action (verb)", adj: "a describing word", adv: "a word about how or when" };
 
     let mode = "daily", answer, meaning, state, current = "", busy = false;
     const stats = store.get("stats", { played: 0, wins: 0, streak: 0, best: 0, lastWinDay: null });
@@ -156,17 +174,18 @@
       if (mode === "daily") {
         [answer, meaning] = dailyWord;
         state = store.get("today", null);
-        if (!state || state.day !== day || state.answer !== answer) state = { day, answer, guesses: [], finished: false, won: false };
+        if (!state || state.day !== day || state.answer !== answer) state = { day, answer, guesses: [], finished: false, won: false, hints: 0 };
         $("sub").textContent = `Daily word #${day + 1}`;
       } else {
         [answer, meaning] = WORDS[Math.floor(Math.random() * WORDS.length)];
-        state = { guesses: [], finished: false, won: false };
+        state = { guesses: [], finished: false, won: false, hints: 0 };
         $("sub").textContent = "Practice: a random word, play as many as you like";
       }
       $("dailyBtn").classList.toggle("on", mode === "daily");
       $("practiceBtn").classList.toggle("on", mode === "practice");
       for (let r = 0; r < ROWS; r++) { board.children[r].classList.remove("won"); paintRow(r, state.guesses[r] || "", state.guesses[r] ? score(state.guesses[r]) : null, false); }
       paintKeys();
+      paintHints();
       if (state.finished) setTimeout(showDone, 300);
     }
 
@@ -223,7 +242,7 @@
       paintRow(r, guess, score(guess), true);
       setTimeout(() => { paintKeys(); busy = false; }, LEN * 240 + 120);
       if (guess === answer || state.guesses.length === ROWS) {
-        state.finished = true; state.won = guess === answer;
+        state.finished = true; state.won = guess === answer; paintHints();
         if (mode === "daily") updateStats();
         setTimeout(() => {
           if (state.won) { board.children[r].classList.add("won"); sfx.win(); confetti(); toast(["Jamm rekk!", "Rafet na!", "Waaw!", "Baax na!", "Phew!", "Just made it!"][r]); }
@@ -233,6 +252,33 @@
       }
       if (mode === "daily") store.set("today", state);
     }
+
+    // Hint 1: the topic and kind of word. Hint 2: a clue about the meaning that never names it.
+    function hintText(n) {
+      const d = byPlain[answer];
+      if (n === 1) {
+        const topic = d && CATEGORIES[d.cat] ? CATEGORIES[d.cat] : "Everyday words";
+        const kind = d && KIND[d.pos] ? `, ${KIND[d.pos]}` : "";
+        return `<b>Topic</b>${escapeHtml(topic)}${escapeHtml(kind)}`;
+      }
+      const clue = HINTS[answer] || `It starts with ${answer[0].toUpperCase()}`;
+      return `<b>Clue</b>${escapeHtml(clue)}`;
+    }
+    function paintHints() {
+      const n = state.hints || 0;
+      $("hints").innerHTML = Array.from({ length: n }, (_, i) => `<div class="hint">${hintText(i + 1)}</div>`).join("");
+      const btn = $("hintBtn");
+      btn.disabled = n >= 2 || state.finished;
+      btn.querySelector("span").textContent = n === 0 ? "Hint" : n === 1 ? "Clue" : "Used";
+      btn.setAttribute("aria-label", n === 0 ? "Show the topic" : n === 1 ? "Show a clue" : "No more hints");
+    }
+    $("hintBtn").onclick = () => {
+      if (state.finished || (state.hints || 0) >= 2) return;
+      state.hints = (state.hints || 0) + 1;
+      sfx.ok();
+      paintHints();
+      if (mode === "daily") store.set("today", state);
+    };
 
     function updateStats() {
       stats.played++;
@@ -249,7 +295,8 @@
       const emoji = { ok: "🟦", near: "🟧", no: "🟫" };
       const grid = state.guesses.map(g => score(g).map(c => emoji[c]).join("")).join("\n");
       const label = mode === "daily" ? `#${day + 1}` : "practice";
-      return `Wolof Wordle ${label} ${state.won ? state.guesses.length : "X"}/6\n\n${grid}\n\n${location.origin}/`;
+      const hints = state.hints ? ` · ${"💡".repeat(state.hints)}` : "";
+      return `Wolof Wordle ${label} ${state.won ? state.guesses.length : "X"}/6${hints}\n\n${grid}\n\n${location.origin}/`;
     }
 
     function showDone() {
