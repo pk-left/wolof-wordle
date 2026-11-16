@@ -149,6 +149,13 @@ textarea.field { min-height: 70px; resize: vertical; }
 .foot { text-align: center; padding: 6px 14px 18px; font-size: 0.85rem; }
 .foot span { background: var(--plaque); border: 2px solid var(--line); padding: 3px 10px; display: inline-block; transform: rotate(0.8deg); }
 
+/* the painter's signature, bottom right of the canvas */
+.foot .sig {
+  margin: 10px 0 0; text-align: right; padding-right: 6px;
+  font: italic 700 1.35rem var(--body); color: var(--ink);
+  transform: rotate(-4deg); text-shadow: 2px 2px 0 var(--plaque), -1px -1px 0 var(--plaque);
+}
+
 /* ---------- confetti (cubist shards) ---------- */
 canvas.fx { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
 
